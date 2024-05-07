@@ -1,9 +1,10 @@
 import Person from "../interfaces/Person";
+import Property from "../interfaces/Property";
 import Widget from "../interfaces/Widget";
 
 interface SortersProps<T extends Person | Widget> {
   object: T;
-  setProperty: (property: keyof T) => void;
+  setProperty: (property: Property<T>) => void;
 }
 
 export function Sorters<T extends Person | Widget>({
