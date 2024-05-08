@@ -22,13 +22,24 @@ export function Sorters<T extends Person | Widget>({
       <select
         id="sorters"
         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-        onChange={(event) => setProperty(event.target.value as any)}
+        onChange={(event) => {
+          const values = event.target.value.split("-");
+          setProperty({
+            property: values[0] as any,
+            isDescending: values[1] === "true",
+          });
+        }}
       >
         {Object.keys(object).map((key) => {
           return (
-            <option key={key} value={key}>
-              Sort by: '{key}'
-            </option>
+            <>
+              <option key={`${key}-true`} value={`${key}-true`}>
+                Sort by: '{key}' descending!
+              </option>
+              <option key={`${key}-false`} value={`${key}-false`}>
+                Sort by: '{key}' ascending!
+              </option>
+            </>
           );
         })}
       </select>
