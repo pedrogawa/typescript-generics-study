@@ -3,33 +3,19 @@ import SearchInput from "./components/SearchInput";
 import people from "./mock-data/people";
 import widgets from "./mock-data/widgets";
 import genericSearch from "./utils/genericSearch";
-import genericSort from "./utils/genericSort";
-import Property from "./interfaces/Property";
 import Widget from "./interfaces/Widget";
-import Person from "./interfaces/Person";
 import Sorters from "./components/Sorters";
 import WidgetRenderer from "./components/renderes/WidgetRenderer";
 import PeopleRenderer from "./components/renderes/PeopleRendered";
 import genericFilter from "./utils/genericFilter";
 import Filters from "./components/Filters";
+import Filter from "./interfaces/Filter";
 
 function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showPeople, setShowPeople] = useState(false);
-  const [widgetSortProperty, setWidgetSortProperty] = useState<
-    Property<Widget>
-  >({
-    property: "title",
-    isDescending: true,
-  });
-  const [peopleSortProperty, setPeopleSortProperty] = useState<
-    Property<Person>
-  >({
-    property: "firstName",
-    isDescending: true,
-  });
   const [widgetFilterProperteis, setWidgetFilterProperties] = useState<
-    Array<keyof Widget>
+    Array<Filter<Widget>>
   >([]);
   const buttonText = showPeople ? "Show widgets!" : "Show people!";
   return (
@@ -44,26 +30,42 @@ function App() {
       {!showPeople && (
         <div className="flex flex-col gap-4">
           <h2>Widgets:</h2>
-          <Sorters
-            setProperty={(property) => setWidgetSortProperty(property)}
-            object={widgets[0]}
-          />
+          <Sorters initialSortProperty="title" data={widgets}>
+            {(widget) => <WidgetRenderer {...widget} />}
+          </Sorters>
           <Filters
             object={widgets[0]}
             properties={widgetFilterProperteis}
             onChangeFilter={(property) => {
-              widgetFilterProperteis.includes(property)
-                ? setWidgetFilterProperties(
-                    widgetFilterProperteis.filter(
-                      (widget) => widget !== property,
-                    ),
-                  )
-                : setWidgetFilterProperties([
-                    ...widgetFilterProperteis,
-                    property,
-                  ]);
+              const matchingFilters = widgetFilterProperteis.some(
+                (filterProperty) =>
+                  filterProperty.property === property.property,
+              );
+              const fullMatch = widgetFilterProperteis.some(
+                (filterProperty) =>
+                  filterProperty.property === property.property &&
+                  filterProperty.isTruthySelected === property.isTruthySelected,
+              );
 
-              console.log(widgetFilterProperteis);
+              if (fullMatch) {
+                setWidgetFilterProperties(
+                  widgetFilterProperteis.filter(
+                    (widget) => widget.property !== property.property,
+                  ),
+                );
+              } else if (matchingFilters) {
+                setWidgetFilterProperties([
+                  ...widgetFilterProperteis.filter(
+                    (widget) => widget.property !== property.property,
+                  ),
+                  property,
+                ]);
+              } else {
+                setWidgetFilterProperties([
+                  ...widgetFilterProperteis,
+                  property,
+                ]);
+              }
             }}
           />
           {widgets
@@ -76,7 +78,6 @@ function App() {
               ),
             )
             .filter((widget) => genericFilter(widget, widgetFilterProperteis))
-            .sort((a, b) => genericSort(a, b, widgetSortProperty))
             .map((widget) => {
               return <WidgetRenderer {...widget} />;
             })}
@@ -85,10 +86,9 @@ function App() {
       {showPeople && (
         <div className="flex flex-col gap-4">
           <h2>People: </h2>
-          <Sorters
-            setProperty={(property) => setPeopleSortProperty(property)}
-            object={people[0]}
-          />
+          <Sorters data={people} initialSortProperty="firstName">
+            {(person) => <PeopleRenderer {...person} />}
+          </Sorters>
           {people
             .filter((person) =>
               genericSearch(
@@ -98,7 +98,6 @@ function App() {
                 false,
               ),
             )
-            .sort((a, b) => genericSort(a, b, peopleSortProperty))
             .map((person) => {
               return <PeopleRenderer {...person} />;
             })}

@@ -1,16 +1,27 @@
+import { ReactNode, useState } from "react";
+import genericSort from "../utils/genericSort";
 import Person from "../interfaces/Person";
 import Property from "../interfaces/Property";
 import Widget from "../interfaces/Widget";
 
+type PropsWithChildrenFunction<P, T> = P & { children?(item: T): ReactNode };
+
 interface SortersProps<T extends Person | Widget> {
-  object: T;
-  setProperty: (property: Property<T>) => void;
+  data: Array<T>;
+  initialSortProperty: keyof T;
 }
 
 export function Sorters<T extends Person | Widget>({
-  object,
-  setProperty,
-}: SortersProps<T>) {
+  data,
+  initialSortProperty,
+  children,
+}: PropsWithChildrenFunction<SortersProps<T>, T>) {
+  const [sortProperty, setSortProperty] = useState<Property<T>>({
+    property: initialSortProperty,
+    isDescending: true,
+  });
+
+  const object = data.length > 0 ? data[0] : {};
   return (
     <div className="max-w-2xl">
       <label
@@ -24,7 +35,7 @@ export function Sorters<T extends Person | Widget>({
         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
         onChange={(event) => {
           const values = event.target.value.split("-");
-          setProperty({
+          setSortProperty({
             property: values[0] as any,
             isDescending: values[1] === "true",
           });
@@ -43,6 +54,10 @@ export function Sorters<T extends Person | Widget>({
           );
         })}
       </select>
+      {children &&
+        data
+          .sort((a, b) => genericSort(a, b, sortProperty))
+          .map((widget) => children(widget))}
     </div>
   );
 }
